@@ -46,7 +46,7 @@ def now_iso() -> str:
 # ────────────────────────────────────────────
 
 def memory_get(agent_id: str, key: str, default: Any = None) -> Any:
-    row = db().table("agent_memory").select("value").eq("agent_id", agent_id).eq("key", key).single().execute().data
+    row = db().table("agent_memory").select("value").eq("agent_id", agent_id).eq("key", key).maybe_single().execute().data
     return row["value"] if row else default
 
 
