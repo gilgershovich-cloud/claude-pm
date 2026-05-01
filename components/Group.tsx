@@ -28,6 +28,13 @@ export function Group({ group, showHeaders }: Props) {
   }
 
   async function handleDelete() {
+    if (!window.confirm(`למחוק את "${group.name}"? כל האייטמים יימחקו.`)) return
+    const { data: items } = await supabase.from('items').select('id').eq('group_id', group.id)
+    const ids = (items ?? []).map(i => i.id)
+    if (ids.length > 0) {
+      await supabase.from('sub_items').delete().in('item_id', ids)
+      await supabase.from('items').delete().in('id', ids)
+    }
     await supabase.from('groups').delete().eq('id', group.id)
     router.refresh()
   }
