@@ -7,6 +7,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
+import httpx
 import anthropic
 from supabase import create_client, Client
 
@@ -18,6 +19,10 @@ logging.basicConfig(
 SUPABASE_URL = os.environ["COMPANY_OS_SUPABASE_URL"]
 SUPABASE_KEY = os.environ["COMPANY_OS_SUPABASE_SERVICE_KEY"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
+
+# WhatsApp bridge (M.D Clinic bridge.js — Cloudflare Tunnel URL)
+MD_CLINIC_BRIDGE_URL = os.environ.get("MD_CLINIC_BRIDGE_URL", "")
+GIL_WHATSAPP = os.environ.get("GIL_WHATSAPP_NUMBER", "972524552697")
 
 _supabase: Client | None = None
 _anthropic: anthropic.Anthropic | None = None
@@ -39,6 +44,37 @@ def ai() -> anthropic.Anthropic:
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+# ────────────────────────────────────────────
+# WhatsApp
+# ────────────────────────────────────────────
+
+def send_whatsapp_to_gil(message: str) -> bool:
+    """
+    Sends a WhatsApp message to Gil via M.D Clinic bridge.js.
+    Requires MD_CLINIC_BRIDGE_URL to be set (Cloudflare Tunnel URL).
+    Returns True on success, False if bridge not available.
+    """
+    if not MD_CLINIC_BRIDGE_URL:
+        logging.getLogger("whatsapp").debug("MD_CLINIC_BRIDGE_URL not set — skipping WhatsApp")
+        return False
+    try:
+        resp = httpx.post(
+            f"{MD_CLINIC_BRIDGE_URL}/send",
+            json={"to": f"{GIL_WHATSAPP}@c.us", "message": message},
+            timeout=10,
+            headers={"X-Bridge-Secret": os.environ.get("BRIDGE_SECRET", "")},
+        )
+        if resp.status_code == 200:
+            logging.getLogger("whatsapp").info(f"📱 WhatsApp sent to Gil")
+            return True
+        else:
+            logging.getLogger("whatsapp").warning(f"WhatsApp failed: {resp.status_code}")
+            return False
+    except Exception as e:
+        logging.getLogger("whatsapp").warning(f"WhatsApp error: {e}")
+        return False
 
 
 # ────────────────────────────────────────────

@@ -10,7 +10,8 @@ from datetime import datetime, timezone, timedelta
 from base_agent import (
     memory_get, memory_set, send_message,
     get_open_incidents, get_today_reports,
-    get_pending_decisions, request_decision, ask_claude, db
+    get_pending_decisions, request_decision, ask_claude, db,
+    send_whatsapp_to_gil
 )
 
 AGENT_ID = "ceo"
@@ -132,6 +133,28 @@ def promote_project_to_live(group_id: str) -> None:
     )
 
 
+# ── WhatsApp summary ──────────────────────────────────────────────────────
+
+def _build_whatsapp_summary(subject: str, full_body: str) -> str:
+    """Builds a concise WhatsApp message from the full digest."""
+    incidents = get_open_incidents()
+    pending = get_pending_decisions()
+    critical = [i for i in incidents if i["severity"] == "critical"]
+    overall = "🔴" if critical else "🟡" if incidents else "🟢"
+
+    lines = [
+        f"*{COMPANY_NAME} — דוח יומי*",
+        f"מצב: {overall}",
+    ]
+    if critical:
+        lines.append(f"🚨 {len(critical)} אינצידנטים קריטיים")
+    if pending:
+        lines.append(f"⚖️ {len(pending)} החלטות ממתינות לאישורך")
+    lines.append(f"📊 Dashboard: https://claude-9jz8ta0lf-gilgershovich-clouds-projects.vercel.app/inbox")
+
+    return "\n".join(lines)
+
+
 # ── Main ───────────────────────────────────────────────────────────────────
 
 def run_once() -> None:
@@ -143,7 +166,16 @@ def run_once() -> None:
 
     if last_digest != today:
         subject, body, priority = build_daily_digest()
+
+        # Inbox (Claude PM)
         send_message(AGENT_ID, "gil", subject, body, priority)
+
+        # WhatsApp — גרסה קצרה
+        wa_msg = _build_whatsapp_summary(subject, body)
+        sent = send_whatsapp_to_gil(wa_msg)
+        if not sent:
+            logger.info("WhatsApp bridge not available — digest sent to inbox only")
+
         memory_set(AGENT_ID, "last_digest_date", today)
         logger.info(f"📨 Daily digest sent: {subject}")
 
