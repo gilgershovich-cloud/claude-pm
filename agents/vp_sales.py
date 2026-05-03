@@ -20,6 +20,8 @@ logger = logging.getLogger(AGENT_ID)
 
 SOCIAL_AI_BACKEND = os.environ.get("SOCIAL_AI_HEALTH_URL", "").replace("/health", "")
 
+FOLLOW_UP_DAYS = 3  # remind Gil 3 days after sent with no reply
+
 
 # ── Team: Lead Tracker ─────────────────────────────────────────────────────
 
@@ -91,6 +93,68 @@ def support_agent_check() -> list[str]:
         return []
 
 
+# ── Clinic outreach tracker ────────────────────────────────────────────────
+
+def clinic_outreach_run() -> str:
+    """
+    Checks clinic_outreach table:
+    - Clinics pending > 3 days with no reply → remind Gil to follow up
+    - Counts pipeline by status
+    Returns a summary string for the daily report.
+    """
+    try:
+        r = db().table("clinic_outreach").select("*").execute()
+        rows = r.data if r and r.data else []
+    except Exception as e:
+        logger.debug(f"clinic_outreach fetch: {e}")
+        return "טבלת clinic_outreach לא קיימת עדיין — הרץ את create_clinic_outreach.sql"
+
+    if not rows:
+        return "רשימת 50 קליניקות ריקה — הוסף לידים לטבלת clinic_outreach"
+
+    now = datetime.now(timezone.utc)
+    status_count = {}
+    follow_ups_due = []
+
+    for row in rows:
+        st = row.get("status", "pending")
+        status_count[st] = status_count.get(st, 0) + 1
+
+        # follow-up due: sent but no reply, and follow_up_at has passed
+        if st == "sent":
+            fu_at = row.get("follow_up_at")
+            if fu_at:
+                fu_dt = datetime.fromisoformat(fu_at.replace("Z", "+00:00"))
+                if now >= fu_dt:
+                    follow_ups_due.append(row)
+
+    if follow_ups_due:
+        names = ", ".join(f"{r.get('clinic_name')} ({r.get('city','')})" for r in follow_ups_due[:5])
+        request_decision(
+            AGENT_ID,
+            f"⏰ follow-up נדרש — {len(follow_ups_due)} קליניקות",
+            f"הקליניקות הבאות לא ענו תוך {FOLLOW_UP_DAYS} ימים:\n{names}\n\n"
+            f"תבנית C מ-DM_templates.md מוכנה לשימוש.\n"
+            f"אשר → VP Sales ישלח תזכורת ב-Inbox לכל אחת.",
+            risk_tier="low",
+        )
+
+    total = len(rows)
+    sent = status_count.get("sent", 0)
+    replied = status_count.get("replied", 0)
+    meeting = status_count.get("meeting", 0)
+    won = status_count.get("closed_won", 0)
+
+    conversion = f"{won}/{total}" if total > 0 else "0"
+    reply_rate = f"{round(replied/sent*100)}%" if sent > 0 else "—"
+
+    return (
+        f"קמפיין 50 קליניקות: {total} סה\"כ | {sent} נשלח | {replied} ענו ({reply_rate}) | "
+        f"{meeting} פגישה | {won} סגור ✅\n"
+        f"follow-up ממתינים: {len(follow_ups_due)}"
+    )
+
+
 # ── Daily run ──────────────────────────────────────────────────────────────
 
 def run_once():
@@ -99,12 +163,14 @@ def run_once():
 
     leads = lead_tracker_fetch()
     conversion = conversion_analyzer_report(leads)
+    outreach = clinic_outreach_run()
     open_issues = support_agent_check()
 
     issues_text = "\n".join(f"  {i}" for i in open_issues) if open_issues else "  אין בעיות פתוחות ✅"
 
     body = (
         f"דוח VP Sales — {today}\n\n"
+        f"M.D Clinic — קמפיין 50 קליניקות:\n  {outreach}\n\n"
         f"Pipeline:\n{conversion}\n\n"
         f"בעיות פתוחות שמשפיעות על לקוחות:\n{issues_text}"
     )
