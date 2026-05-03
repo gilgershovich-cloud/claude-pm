@@ -31,6 +31,7 @@ export function AgentChat({ agentId, agentLabel, agentColor }: Props) {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const prevCountRef = useRef(0)
 
   async function fetchMessages() {
     try {
@@ -54,7 +55,10 @@ export function AgentChat({ agentId, agentLabel, agentColor }: Props) {
   }, [agentId])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length > prevCountRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      prevCountRef.current = messages.length
+    }
   }, [messages])
 
   async function send() {
