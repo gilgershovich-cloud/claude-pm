@@ -7,10 +7,27 @@ import { supabase } from '@/lib/supabase'
 
 const GROUP_COLORS = ['#0073EA', '#9D50DD', '#FF7575', '#00CA72', '#FDAB3D', '#E2445C']
 
-export function BoardHeader({ groupCount }: { groupCount: number }) {
+const FILTERS = [
+  { key: 'all',        label: 'הכל' },
+  { key: 'planning',   label: 'עתידי' },
+  { key: 'active',     label: 'פעיל' },
+  { key: 'working',    label: 'בביצוע' },
+  { key: 'done',       label: 'הושלם' },
+  { key: 'blocked',    label: 'חסום' },
+] as const
+
+export type FilterKey = typeof FILTERS[number]['key']
+
+export function BoardHeader({ groupCount, onSearch, onFilter, activeFilter = 'all' }: {
+  groupCount: number
+  onSearch?: (q: string) => void
+  onFilter?: (f: FilterKey) => void
+  activeFilter?: FilterKey
+}) {
   const router = useRouter()
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
+  const [query, setQuery] = useState('')
 
   async function handleAdd() {
     if (!name.trim()) { setAdding(false); return }
@@ -33,23 +50,34 @@ export function BoardHeader({ groupCount }: { groupCount: number }) {
         <span style={{ fontWeight: 700, fontSize: 18, color: '#323338' }}>My Projects</span>
       </div>
 
-      <div style={{ display: 'flex', gap: 4, marginLeft: 24, background: '#f5f6f8', borderRadius: 6, padding: 3 }}>
-        {['Table', 'Kanban'].map(v => (
-          <button key={v} style={{
-            padding: '5px 14px', border: 'none', borderRadius: 4,
-            background: v === 'Table' ? '#fff' : 'transparent',
-            color: v === 'Table' ? '#323338' : '#676879',
-            fontSize: 13, fontWeight: v === 'Table' ? 600 : 400, cursor: 'pointer',
-            boxShadow: v === 'Table' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-          }}>
-            {v}
+
+      {/* Filter tabs */}
+      <div style={{ display: 'flex', gap: 4 }}>
+        {FILTERS.map(f => (
+          <button
+            key={f.key}
+            onClick={() => onFilter?.(f.key)}
+            style={{
+              padding: '4px 12px', border: 'none', borderRadius: 20, cursor: 'pointer',
+              background: activeFilter === f.key ? '#0073EA' : '#f5f6f8',
+              color: activeFilter === f.key ? '#fff' : '#676879',
+              fontSize: 12, fontWeight: activeFilter === f.key ? 700 : 400,
+              transition: 'all 0.15s',
+            }}
+          >
+            {f.label}
           </button>
         ))}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f5f6f8', borderRadius: 6, padding: '6px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f5f6f8', borderRadius: 6, padding: '6px 12px', minWidth: 180 }}>
         <Search size={14} color="#676879" />
-        <span style={{ fontSize: 13, color: '#9699a6' }}>חיפוש...</span>
+        <input
+          value={query}
+          onChange={e => { setQuery(e.target.value); onSearch?.(e.target.value) }}
+          placeholder="חיפוש..."
+          style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: 13, color: '#323338', width: '100%' }}
+        />
       </div>
 
       <div style={{ marginLeft: 'auto' }}>

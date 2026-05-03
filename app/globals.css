@@ -35,6 +35,8 @@ button, [data-clickable] {
   -webkit-user-select: none;
 }
 
+a:hover .agent-card { box-shadow: 0 4px 16px rgba(0,115,234,0.12); border-color: #0073EA !important; }
+
 .cell-edit {
   background: transparent;
   border: none;

@@ -7,6 +7,7 @@ import type { Item, Status } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 import { StatusCell } from './StatusCell'
 import { SubItemPanel } from './SubItemPanel'
+import { TranslateTooltip } from './TranslateTooltip'
 
 interface Props {
   item: Item
@@ -48,6 +49,20 @@ export function ItemRow({ item, colWidths }: Props) {
 
   const subItems = item.sub_items ?? []
 
+  // Progress calculation
+  const progress = (() => {
+    if (subItems.length > 0) {
+      const done = subItems.filter(s => s.status === 'done').length
+      return Math.round((done / subItems.length) * 100)
+    }
+    const statusPct: Record<string, number> = {
+      planning: 0, pending: 10, active: 25, working_on_it: 60, blocked: 40, done: 100,
+    }
+    return statusPct[localStatus] ?? 0
+  })()
+
+  const progressColor = progress === 100 ? '#00CA72' : progress >= 60 ? '#FDAB3D' : progress > 0 ? '#0073EA' : '#e6e9ef'
+
   return (
     <>
       <div
@@ -85,12 +100,25 @@ export function ItemRow({ item, colWidths }: Props) {
               onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditField(null) }}
             />
           ) : (
-            <span
-              onDoubleClick={() => startEdit('name', item.name)}
-              style={{ fontSize: 14, color: '#323338', cursor: 'default', flex: 1, paddingRight: 8 }}
-            >
-              {item.name}
-            </span>
+            <div style={{ flex: 1, paddingRight: 8, minWidth: 0 }}>
+              <TranslateTooltip text={item.name}>
+                <span
+                  onDoubleClick={() => startEdit('name', item.name)}
+                  style={{ fontSize: 14, color: '#323338', cursor: 'default', display: 'block' }}
+                >
+                  {item.name}
+                </span>
+              </TranslateTooltip>
+              {/* Progress bar */}
+              <div style={{ marginTop: 3, height: 3, borderRadius: 2, background: '#f0f1f3', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 2,
+                  background: progressColor,
+                  width: `${progress}%`,
+                  transition: 'width 0.3s ease',
+                }} />
+              </div>
+            </div>
           )}
 
           {hover && (

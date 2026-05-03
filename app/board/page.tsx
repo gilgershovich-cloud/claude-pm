@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import { BoardHeader } from '@/components/BoardHeader'
 import { Board } from '@/components/Board'
 import type { Group, Item, SubItem } from '@/lib/types'
 
@@ -47,12 +46,5 @@ async function getData(): Promise<Group[]> {
 export default async function BoardPage() {
   const groups = await getData()
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <BoardHeader groupCount={groups.length} />
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        <Board groups={groups} />
-      </div>
-    </div>
-  )
+  return <Board groups={groups} />
 }

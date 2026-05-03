@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutGrid, Inbox, Settings, ChevronRight, Users, TrendingUp, Plug, Code2 } from 'lucide-react'
+import { LayoutGrid, Inbox, Settings, ChevronRight, Users, TrendingUp, Plug, Code2, BarChart2, ShoppingBag } from 'lucide-react'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -21,6 +21,8 @@ const NAV_SECTIONS = [
     items: [
       { icon: <Users size={18} />, label: 'סוכנים', href: '/agents' },
       { icon: <TrendingUp size={18} />, label: 'כספים', href: '/finance' },
+      { icon: <BarChart2 size={18} />, label: 'אנליטיקה', href: '/analytics' },
+      { icon: <ShoppingBag size={18} />, label: 'מכירות', href: '/sales' },
       { icon: <Plug size={18} />, label: 'חיבורים', href: '/integrations' },
       { icon: <Code2 size={18} />, label: 'API', href: '/api-docs' },
     ],

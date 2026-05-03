@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="he" style={{ height: '100%' }}>
+    <html lang="he" dir="rtl" style={{ height: '100%' }}>
       <body style={{ height: '100%', display: 'flex', margin: 0 }}>
         <SidebarServer />
         <main style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>

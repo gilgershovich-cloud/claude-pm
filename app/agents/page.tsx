@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import Link from 'next/link'
 import type { AgentReport, Incident } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -76,18 +77,17 @@ export default async function AgentsPage() {
   const vps = AGENTS.filter(a => a.tier === 'vp')
 
   return (
-    <div style={{ padding: 32, background: '#f6f7fb', minHeight: '100%' }}>
-      {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#323338', margin: 0 }}>צוות הסוכנים</h1>
-        <p style={{ color: '#676879', fontSize: 14, marginTop: 6 }}>
-          {AGENTS.length} סוכנים פעילים · מנהלים את כל הפרויקטים באופן אוטונומי
-        </p>
+    <div style={{ background: '#f6f7fb', minHeight: '100%' }}>
+      {/* Page header — sticky, Monday-style */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #e6e9ef', padding: '0 28px', height: 56, display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 20 }}>
+        <span style={{ fontWeight: 700, fontSize: 18, color: '#323338' }}>צוות הסוכנים</span>
+        <span style={{ fontSize: 13, color: '#9699a6' }}>{AGENTS.length} סוכנים פעילים · מנהלים את כל הפרויקטים באופן אוטונומי</span>
       </div>
 
+      <div style={{ padding: 28 }}>
       {/* CEO */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#9699a6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>מנהל כללי</div>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#9699a6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>מנהל כללי</div>
         <AgentCard
           agent={ceo}
           lastReport={reportsByAgent[ceo.id]?.[0]}
@@ -104,7 +104,7 @@ export default async function AgentsPage() {
       </div>
 
       {/* VPs Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
         {vps.map(agent => (
           <AgentCard
             key={agent.id}
@@ -114,6 +114,7 @@ export default async function AgentsPage() {
             recentReports={reportsByAgent[agent.id]?.slice(0, 2) ?? []}
           />
         ))}
+      </div>
       </div>
     </div>
   )
@@ -126,28 +127,30 @@ function AgentCard({ agent, lastReport, agentIncidents, recentReports }: {
   recentReports: AgentReport[]
 }) {
   return (
-    <div style={{
+    <Link href={`/agents/${agent.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+    <div className="agent-card" style={{
       background: '#fff', borderRadius: 12, padding: 20,
       border: '1px solid #e6e9ef',
       boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+      transition: 'box-shadow 0.15s, border-color 0.15s',
     }}>
       {/* Agent header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#323338' }}>{agent.label}</div>
+          <div style={{ fontSize: 13, color: '#676879', marginTop: 2 }}>{agent.role}</div>
+          <div style={{ marginTop: 6 }}>
+            <AgentStatus lastReport={lastReport} incidents={agentIncidents} />
+          </div>
+        </div>
         <div style={{
-          width: 44, height: 44, borderRadius: 10, flexShrink: 0,
-          background: agent.color + '22',
-          border: `2px solid ${agent.color}`,
+          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+          background: agent.color + '18',
+          border: `2px solid ${agent.color}40`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 18,
         }}>
           {agent.tier === 'ceo' ? '👔' : '🤖'}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#323338' }}>{agent.label}</div>
-          <div style={{ fontSize: 13, color: '#676879', marginTop: 1 }}>{agent.role}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-            <AgentStatus lastReport={lastReport} incidents={agentIncidents} />
-          </div>
         </div>
       </div>
 
@@ -191,5 +194,6 @@ function AgentCard({ agent, lastReport, agentIncidents, recentReports }: {
         </div>
       )}
     </div>
+    </Link>
   )
 }
