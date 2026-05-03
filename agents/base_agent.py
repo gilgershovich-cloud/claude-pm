@@ -82,15 +82,23 @@ def send_whatsapp_to_gil(message: str) -> bool:
 # ────────────────────────────────────────────
 
 def memory_get(agent_id: str, key: str, default: Any = None) -> Any:
-    row = db().table("agent_memory").select("value").eq("agent_id", agent_id).eq("key", key).maybe_single().execute().data
-    return row["value"] if row else default
+    try:
+        result = db().table("agent_memory").select("value").eq("agent_id", agent_id).eq("key", key).maybe_single().execute()
+        if result is None or result.data is None:
+            return default
+        return result.data.get("value", default)
+    except Exception:
+        return default
 
 
 def memory_set(agent_id: str, key: str, value: Any) -> None:
-    db().table("agent_memory").upsert(
-        {"agent_id": agent_id, "key": key, "value": value, "updated_at": now_iso()},
-        on_conflict="agent_id,key"
-    ).execute()
+    try:
+        db().table("agent_memory").upsert(
+            {"agent_id": agent_id, "key": key, "value": value, "updated_at": now_iso()},
+            on_conflict="agent_id,key"
+        ).execute()
+    except Exception as e:
+        logging.getLogger("memory").warning(f"memory_set failed: {e}")
 
 
 # ────────────────────────────────────────────
@@ -113,14 +121,16 @@ def send_message(from_agent: str, to_agent: str, subject: str, body: str, priori
 # ────────────────────────────────────────────
 
 def open_incident(agent_id: str, project: str, title: str, description: str, severity: str = "medium") -> str:
-    row = db().table("incidents").insert({
+    result = db().table("incidents").insert({
         "agent_id": agent_id,
         "project": project,
         "severity": severity,
         "title": title,
         "description": description,
         "status": "open",
-    }).execute().data[0]
+    }).execute()
+    data = result.data if result and result.data else []
+    row = data[0] if data else {"id": "unknown"}
     logging.getLogger(agent_id).warning(f"🚨 [{severity.upper()}] {title}")
     return row["id"]
 
@@ -136,7 +146,8 @@ def get_open_incidents(project: str | None = None):
     q = db().table("incidents").select("*").eq("status", "open")
     if project:
         q = q.eq("project", project)
-    return q.execute().data
+    result = q.execute()
+    return result.data if result and result.data else []
 
 
 # ────────────────────────────────────────────
@@ -155,7 +166,8 @@ def write_report(agent_id: str, title: str, body: str, report_type: str = "daily
 
 def get_today_reports():
     today = datetime.now(timezone.utc).date().isoformat()
-    return db().table("agent_reports").select("*").gte("created_at", today).execute().data
+    result = db().table("agent_reports").select("*").gte("created_at", today).execute()
+    return result.data if result and result.data else []
 
 
 # ────────────────────────────────────────────
@@ -163,19 +175,22 @@ def get_today_reports():
 # ────────────────────────────────────────────
 
 def request_decision(agent_id: str, title: str, description: str, risk_tier: str) -> str:
-    row = db().table("agent_decisions").insert({
+    result = db().table("agent_decisions").insert({
         "agent_id": agent_id,
         "title": title,
         "description": description,
         "risk_tier": risk_tier,
         "status": "pending",
-    }).execute().data[0]
+    }).execute()
+    data = result.data if result and result.data else []
+    row = data[0] if data else {"id": "unknown"}
     logging.getLogger(agent_id).info(f"⚖️ Decision requested [{risk_tier}]: {title}")
     return row["id"]
 
 
 def get_pending_decisions():
-    return db().table("agent_decisions").select("*").eq("status", "pending").execute().data
+    result = db().table("agent_decisions").select("*").eq("status", "pending").execute()
+    return result.data if result and result.data else []
 
 
 # ────────────────────────────────────────────

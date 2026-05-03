@@ -22,10 +22,12 @@ logger = logging.getLogger(AGENT_ID)
 
 def board_watcher_scan() -> dict:
     """Scans all groups and items, returns project health report."""
-    groups = db().table("groups").select("id,name,lifecycle_status,color").order("position").execute().data
+    r = db().table("groups").select("id,name,lifecycle_status,color").order("position").execute()
+    groups = r.data if r and r.data else []
     report = {}
     for group in groups:
-        items = db().table("items").select("id,name,status,updated_at").eq("group_id", group["id"]).execute().data
+        ri = db().table("items").select("id,name,status,updated_at").eq("group_id", group["id"]).execute()
+        items = ri.data if ri and ri.data else []
         total = len(items)
         if total == 0:
             continue

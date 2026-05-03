@@ -121,14 +121,16 @@ def build_campaign_strategy(project_name: str, platform: str, goal: str, target:
 
 def setup_new_project_marketing(group_id: str) -> None:
     """Called when a project transitions to live_managed and needs_marketing=True."""
-    config = db().table("project_marketing_config").select("*").eq("group_id", group_id).single().execute().data
+    config = db().table("project_marketing_config").select("*").eq("group_id", group_id).maybe_single().execute()
+    config = config.data if config else None
     if not config or not config.get("needs_marketing"):
         return
 
     if config.get("approved_by_gil"):
         return  # already set up
 
-    group = db().table("groups").select("name").eq("id", group_id).single().execute().data
+    group = db().table("groups").select("name").eq("id", group_id).maybe_single().execute()
+    group = group.data if group else None
     project_name = group["name"] if group else group_id
 
     # Analyze platforms
@@ -174,11 +176,13 @@ def setup_new_project_marketing(group_id: str) -> None:
 
 def propose_campaign(group_id: str, platform: str, daily_budget_ils: int) -> None:
     """Build a campaign strategy and ask Gil to approve every shekel."""
-    config = db().table("project_marketing_config").select("*").eq("group_id", group_id).single().execute().data
+    config = db().table("project_marketing_config").select("*").eq("group_id", group_id).maybe_single().execute()
+    config = config.data if config else None
     if not config:
         return
 
-    group = db().table("groups").select("name").eq("id", group_id).single().execute().data
+    group = db().table("groups").select("name").eq("id", group_id).maybe_single().execute()
+    group = group.data if group else None
     project_name = group["name"] if group else group_id
 
     strategy = build_campaign_strategy(
@@ -228,7 +232,7 @@ def propose_campaign(group_id: str, platform: str, daily_budget_ils: int) -> Non
 
 def monitor_campaigns() -> None:
     """Check live campaigns, fetch metrics, optimize."""
-    active = db().table("ad_campaigns").select("*").eq("status", "active").execute().data
+    active = db().table("ad_campaigns").select("*").eq("status", "active").execute()
     if not active:
         return
 
@@ -264,7 +268,8 @@ def _check_campaign_performance(campaign: dict) -> None:
     roas = metrics.get("roas", 0) or 0
     spend = metrics.get("spend_ils", 0) or 0
 
-    group = db().table("groups").select("name").eq("id", group_id).single().execute().data
+    group = db().table("groups").select("name").eq("id", group_id).maybe_single().execute()
+    group = group.data if group else None
     project_name = group["name"] if group else group_id
 
     # ROAS too low → propose pause
@@ -326,14 +331,16 @@ def _fetch_metrics(campaign: dict) -> dict | None:
 
 def activate_approved_campaigns() -> None:
     """Check if any pending campaigns were approved by Gil and activate them."""
-    pending = db().table("ad_campaigns").select("*").eq("status", "pending_approval").execute().data
+    r_p = db().table("ad_campaigns").select("*").eq("status", "pending_approval").execute()
+    pending = r_p.data if r_p and r_p.data else []
 
     for campaign in pending:
         decision_id = campaign.get("decision_id")
         if not decision_id:
             continue
 
-        decision = db().table("agent_decisions").select("status").eq("id", decision_id).single().execute().data
+        dr = db().table("agent_decisions").select("status").eq("id", decision_id).maybe_single().execute()
+        decision = dr.data if dr else None
         if not decision or decision["status"] != "approved":
             continue
 
@@ -357,7 +364,8 @@ def _launch_campaign(campaign: dict) -> None:
     group_id = campaign["group_id"]
 
     # Get the social account for this project+platform
-    account = db().table("social_accounts").select("*").eq("group_id", group_id).eq("platform", platform).eq("account_type", "ad_account").single().execute().data
+    account = db().table("social_accounts").select("*").eq("group_id", group_id).eq("platform", platform).eq("account_type", "ad_account").maybe_single().execute()
+    account = account.data if account else None
 
     if not account:
         raise ValueError(f"No {platform} ad account configured for this project")
@@ -398,18 +406,18 @@ def _launch_campaign(campaign: dict) -> None:
 # ── New project detector ───────────────────────────────────────────────────
 
 def detect_new_live_projects() -> None:
-    """Find projects that just went live_managed and haven't been set up for marketing."""
-    live_groups = db().table("groups").select("id,name").eq("lifecycle_status", "live_managed").execute().data
+    """Find projects with needs_marketing=True that haven't been approved yet.
 
-    for group in live_groups:
-        existing = db().table("project_marketing_config").select("id,approved_by_gil").eq("group_id", group["id"]).single().execute().data
-        if existing and existing.get("approved_by_gil"):
+    Marketing can start before a project is fully live_managed — for example,
+    M.D Clinic needs outreach campaigns while still in development/pre-sales.
+    """
+    r = db().table("project_marketing_config").select("group_id,needs_marketing,approved_by_gil").eq("needs_marketing", True).execute()
+    configs = r.data if r and r.data else []
+
+    for config in configs:
+        if config.get("approved_by_gil"):
             continue  # already set up
-
-        # Check if needs_marketing is set
-        config = db().table("project_marketing_config").select("needs_marketing").eq("group_id", group["id"]).single().execute().data
-        if config and config.get("needs_marketing"):
-            setup_new_project_marketing(group["id"])
+        setup_new_project_marketing(config["group_id"])
 
 
 # ── Daily marketing report ─────────────────────────────────────────────────
@@ -420,12 +428,14 @@ def write_marketing_report() -> None:
     if last == today:
         return
 
-    active_campaigns = db().table("ad_campaigns").select("*").eq("status", "active").execute().data
+    r_ac = db().table("ad_campaigns").select("*").eq("status", "active").execute()
+    active_campaigns = r_ac.data if r_ac and r_ac.data else []
     total_spend = sum(c.get("total_spent_ils", 0) or 0 for c in active_campaigns)
 
     lines = []
     for c in active_campaigns:
-        metrics = db().table("campaign_metrics").select("*").eq("campaign_id", c["id"]).order("measured_at", desc=True).limit(1).execute().data
+        mr = db().table("campaign_metrics").select("*").eq("campaign_id", c["id"]).order("measured_at", desc=True).limit(1).execute()
+        metrics = mr.data if mr and mr.data else []
         latest = metrics[0] if metrics else {}
         roas = latest.get("roas") or 0
         spend = latest.get("spend_ils") or 0

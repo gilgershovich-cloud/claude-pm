@@ -57,7 +57,7 @@ def build_daily_digest() -> tuple[str, str, str]:
             f"  ⚖️ [{d['risk_tier'].upper()}] {d['title']}"
             for d in pending[:5]
         )
-        dec_section = f"⚖️ החלטות ממתינות לאישורך ({len(pending)}):\n{dec_lines}\n👉 https://claude-9jz8ta0lf-gilgershovich-clouds-projects.vercel.app/inbox"
+        dec_section = f"⚖️ החלטות ממתינות לאישורך ({len(pending)}):\n{dec_lines}\n👉 https://claude-pm-xi.vercel.app/inbox"
     else:
         dec_section = "אין החלטות ממתינות ✅"
 
@@ -83,8 +83,8 @@ def build_daily_digest() -> tuple[str, str, str]:
         f"{rep_section}\n\n"
         f"{dec_section}\n\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📊 Dashboard: https://claude-9jz8ta0lf-gilgershovich-clouds-projects.vercel.app/board\n"
-        f"📬 Inbox: https://claude-9jz8ta0lf-gilgershovich-clouds-projects.vercel.app/inbox\n\n"
+        f"📊 Dashboard: https://claude-pm-xi.vercel.app/board\n"
+        f"📬 Inbox: https://claude-pm-xi.vercel.app/inbox\n\n"
         f"— מנכ\"ל, {COMPANY_NAME}"
     )
 
@@ -101,9 +101,11 @@ def check_project_lifecycle() -> None:
     בודק פרויקטים שסיימו פיתוח ומוכנים לאישור גיל.
     כל פרויקט שכל הפריטים שלו 'done' → מציע מעבר ל-live_managed.
     """
-    groups = db().table("groups").select("id,name,lifecycle_status").eq("lifecycle_status", "development").execute().data
+    result = db().table("groups").select("id,name,lifecycle_status").eq("lifecycle_status", "development").execute()
+    groups = result.data if result and result.data else []
     for group in groups:
-        items = db().table("items").select("status").eq("group_id", group["id"]).execute().data
+        r = db().table("items").select("status").eq("group_id", group["id"]).execute()
+        items = r.data if r and r.data else []
         if not items:
             continue
         total = len(items)
@@ -150,7 +152,7 @@ def _build_whatsapp_summary(subject: str, full_body: str) -> str:
         lines.append(f"🚨 {len(critical)} אינצידנטים קריטיים")
     if pending:
         lines.append(f"⚖️ {len(pending)} החלטות ממתינות לאישורך")
-    lines.append(f"📊 Dashboard: https://claude-9jz8ta0lf-gilgershovich-clouds-projects.vercel.app/inbox")
+    lines.append(f"📊 Dashboard: https://claude-pm-xi.vercel.app/inbox")
 
     return "\n".join(lines)
 

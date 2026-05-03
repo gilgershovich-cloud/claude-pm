@@ -21,7 +21,7 @@ logger = logging.getLogger(AGENT_ID)
 SERVICES = [
     {"name": "social_ai_backend", "url": os.environ.get("SOCIAL_AI_HEALTH_URL", "https://social-ai-platform-production.up.railway.app/health"), "timeout": 8},
     {"name": "social_ai_frontend", "url": "https://frontend-murex-three-74g0axrz4g.vercel.app", "timeout": 10},
-    {"name": "claude_pm_dashboard", "url": "https://claude-9jz8ta0lf-gilgershovich-clouds-projects.vercel.app/board", "timeout": 10},
+    {"name": "claude_pm_dashboard", "url": "https://claude-pm-xi.vercel.app/board", "timeout": 10},
     {"name": "md_clinic_local", "url": os.environ.get("MD_CLINIC_HEALTH_URL", ""), "timeout": 10},
 ]
 
