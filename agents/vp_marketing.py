@@ -129,6 +129,15 @@ def setup_new_project_marketing(group_id: str) -> None:
     if config.get("approved_by_gil"):
         return  # already set up
 
+    # Don't create a duplicate decision if one is already pending
+    existing_decision_id = memory_get(AGENT_ID, f"pending_setup_decision_{group_id}")
+    if existing_decision_id:
+        dr = db().table("agent_decisions").select("status").eq("id", existing_decision_id).maybe_single().execute()
+        existing = dr.data if dr else None
+        if existing and existing.get("status") == "pending":
+            logger.debug(f"Setup decision already pending for {group_id}, skipping")
+            return
+
     group = db().table("groups").select("name").eq("id", group_id).maybe_single().execute()
     group = group.data if group else None
     project_name = group["name"] if group else group_id
@@ -161,6 +170,9 @@ def setup_new_project_marketing(group_id: str) -> None:
         + "\n\nאין הוצאת כסף עדיין — רק הגדרת חשבונות.",
         risk_tier="medium"
     )
+
+    # Remember this decision so we don't create duplicates next hour
+    memory_set(AGENT_ID, f"pending_setup_decision_{group_id}", decision_id)
 
     send_message(
         AGENT_ID, "ceo",

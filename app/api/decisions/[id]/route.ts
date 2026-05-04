@@ -13,11 +13,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { data, error } = await sb()
     .from('agent_decisions')
-    .update({ status: body.status, resolved_at: new Date().toISOString() })
+    .update({ status: body.status })
     .eq('id', id)
     .select()
-    .single()
 
   if (error) return err(error.message, 500)
-  return ok({ decision: data })
+  if (!data || data.length === 0) return err('Decision not found', 404)
+  return ok({ decision: data[0] })
 }
