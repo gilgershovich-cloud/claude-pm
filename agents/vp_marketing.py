@@ -419,6 +419,41 @@ def _launch_campaign(campaign: dict) -> None:
         db().table("ad_campaigns").update({"campaign_id_external": ext_id}).eq("id", campaign["id"]).execute()
 
 
+# ── Approved setup handler ────────────────────────────────────────────────
+
+def process_approved_setups() -> None:
+    """When Gil approves a marketing setup decision, mark project as approved."""
+    try:
+        approved = db().table("agent_decisions") \
+            .select("id,title") \
+            .eq("agent_id", AGENT_ID) \
+            .eq("status", "approved") \
+            .ilike("title", "%אשר פלטפורמות וחשבונות%") \
+            .execute()
+        if not approved.data:
+            return
+
+        configs = db().table("project_marketing_config") \
+            .select("group_id") \
+            .eq("needs_marketing", True) \
+            .eq("approved_by_gil", False) \
+            .execute()
+
+        for config in (configs.data or []):
+            group_id = config["group_id"]
+            group = db().table("groups").select("name").eq("id", group_id).maybe_single().execute()
+            project_name = (group.data or {}).get("name", "")
+            for dec in approved.data:
+                if project_name and project_name in dec["title"]:
+                    db().table("project_marketing_config") \
+                        .update({"approved_by_gil": True}) \
+                        .eq("group_id", group_id) \
+                        .execute()
+                    logger.info(f"Marketing approved for {project_name} — marked in config")
+    except Exception as e:
+        logger.warning(f"process_approved_setups failed: {e}")
+
+
 # ── New project detector ───────────────────────────────────────────────────
 
 def detect_new_live_projects() -> None:
@@ -472,6 +507,7 @@ def write_marketing_report() -> None:
 def run_once() -> None:
     logger.info("📢 VP Marketing — starting run")
     try:
+        process_approved_setups()
         detect_new_live_projects()
         activate_approved_campaigns()
         monitor_campaigns()
