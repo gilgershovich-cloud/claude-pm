@@ -129,14 +129,18 @@ def setup_new_project_marketing(group_id: str) -> None:
     if config.get("approved_by_gil"):
         return  # already set up
 
-    # Don't create a duplicate decision if one is already pending
-    existing_decision_id = memory_get(AGENT_ID, f"pending_setup_decision_{group_id}")
-    if existing_decision_id:
-        dr = db().table("agent_decisions").select("status").eq("id", existing_decision_id).maybe_single().execute()
-        existing = dr.data if dr else None
-        if existing and existing.get("status") == "pending":
+    # Don't create a duplicate decision — check DB directly (memory can fail on restarts)
+    try:
+        group_tmp = db().table("groups").select("name").eq("id", group_id).maybe_single().execute()
+        tmp_name = (group_tmp.data or {}).get("name", group_id)
+        existing_title = f"🚀 שיווק — {tmp_name}: אשר פלטפורמות וחשבונות"
+        dup = db().table("agent_decisions").select("id").eq("agent_id", AGENT_ID).eq("status", "pending").eq("title", existing_title).execute()
+        if dup.data:
             logger.debug(f"Setup decision already pending for {group_id}, skipping")
             return
+    except Exception as e:
+        logger.warning(f"Duplicate check failed, skipping to be safe: {e}")
+        return
 
     group = db().table("groups").select("name").eq("id", group_id).maybe_single().execute()
     group = group.data if group else None
