@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme {
+  --color-night: #0c0c11;
+  --color-night-2: #15151d;
+  --color-ink: #16161c;
+  --color-muted: #6b6f78;
+  --color-line: #e7e4dd;
+  --color-cream: #faf8f4;
+  --color-surface: #ffffff;
+  --color-accent: #c79a3f;
+  --color-accent-strong: #b1862f;
+  --color-accent-soft: #f3e9d2;
+
+  --font-sans: var(--font-rubik), system-ui, Arial, sans-serif;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem; /* offset for sticky header on anchor jumps */
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* Shared layout helpers */
+@utility container-page {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+@utility section-pad {
+  padding-block: 4.5rem;
+}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="Corporate placeholder">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a8f7d"/>
+      <stop offset="1" stop-color="#1d2f33"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#g)"/>
+  <g fill="#ffffff" font-family="Arial, sans-serif" text-anchor="middle">
+    <circle cx="320" cy="150" r="38" fill="rgba(255,255,255,0.18)"/>
+    <path d="M308 132 l28 18 -28 18 z" fill="#ffffff"/>
+    <text x="320" y="232" font-size="26" font-weight="700">Corporate</text>
+    <text x="320" y="262" font-size="14" fill="rgba(255,255,255,0.75)" letter-spacing="2">PLACEHOLDER — replace</text>
+  </g>
+</svg>
