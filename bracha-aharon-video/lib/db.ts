@@ -15,8 +15,20 @@ export interface Lead extends LeadInput {
   createdAt: string;
 }
 
+// Vercel's Postgres/Neon integration injects the connection string under one of
+// several names depending on the integration version. Prefer pooled URLs.
+function getConnectionString(): string | undefined {
+  return (
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL_UNPOOLED ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    undefined
+  );
+}
+
 export function isDatabaseConfigured(): boolean {
-  return Boolean(process.env.DATABASE_URL);
+  return Boolean(getConnectionString());
 }
 
 let pool: Pool | null = null;
@@ -32,7 +44,7 @@ function useSsl(connectionString: string): boolean {
 
 function getPool(): Pool {
   if (pool) return pool;
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = getConnectionString();
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
   }
