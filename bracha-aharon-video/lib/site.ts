@@ -2,8 +2,8 @@
 // data before launch — these are referenced by contact buttons, footer and JSON-LD.
 
 export const SITE = {
-  // Production origin (used for canonical URLs, OG, sitemap). PLACEHOLDER.
-  baseUrl: "https://www.bracha-aharon.co.il",
+  // Production origin (used for canonical URLs, OG, sitemap).
+  baseUrl: "https://bracha-aharon.co.il",
 
   brand: {
     he: "ברכה אהרון – עריכת וידאו לאירועים",
