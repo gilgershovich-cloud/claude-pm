@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>השאלון הקצר בעולם</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Secular+One&family=Varela+Round&display=swap">
+<style>
+  /* Layout: one sticker-card in the middle of a sunny board; one question at a time, swapped in place. */
+  :root {
+    --sun: #FFF3C4;
+    --ink: #2A1F45;
+    --paper: #FFFFFF;
+    --pink: #FF5FA2;
+    --mint: #2CCFB6;
+    --sky: #5DB7FF;
+    --orange: #FF9F43;
+    --lilac: #B79CFF;
+    --muted: #6B5F86;
+    --display: "Secular One", "Arial Hebrew", system-ui, sans-serif;
+    --body: "Varela Round", "Arial Hebrew", system-ui, sans-serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { min-height: 100%; }
+  body {
+    margin: 0;
+    background: var(--sun);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.55;
+    padding-inline: 16px;
+    padding-block: 28px 40px;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(255,95,162,.28) 0 70px, transparent 71px),
+      radial-gradient(circle at 88% 12%, rgba(93,183,255,.30) 0 90px, transparent 91px),
+      radial-gradient(circle at 92% 82%, rgba(44,207,182,.28) 0 110px, transparent 111px),
+      radial-gradient(circle at 6% 90%, rgba(255,159,67,.30) 0 80px, transparent 81px),
+      radial-gradient(rgba(42,31,69,.10) 1.5px, transparent 1.6px);
+    background-size: auto, auto, auto, auto, 22px 22px;
+    background-attachment: fixed;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; display: grid; gap: 18px; }
+
+  header { display: grid; gap: 6px; text-align: center; }
+  .stamp {
+    justify-self: center;
+    font-family: var(--display);
+    font-size: 13px;
+    letter-spacing: .06em;
+    background: var(--ink);
+    color: var(--sun);
+    padding: 4px 14px;
+    border-radius: 999px;
+    transform: rotate(-2deg);
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(30px, 8vw, 46px);
+    line-height: 1.1;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h1 .hl { background: linear-gradient(transparent 55%, var(--pink) 55% 88%, transparent 88%); padding-inline: 4px; }
+
+  .progress { display: grid; gap: 6px; }
+  .progress-top { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar { height: 14px; border: 2.5px solid var(--ink); border-radius: 999px; background: var(--paper); overflow: hidden; }
+  .bar > i {
+    display: block; height: 100%; width: 10%;
+    background: repeating-linear-gradient(-45deg, var(--mint) 0 10px, var(--sky) 10px 20px);
+    transition: width .6s cubic-bezier(.3,1.6,.5,1);
+  }
+
+  .card {
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: 26px;
+    box-shadow: 8px 8px 0 var(--ink);
+    padding: 26px 22px 24px;
+    position: relative;
+    min-height: 330px;
+    display: grid;
+    align-content: start;
+    gap: 16px;
+  }
+  .qnum {
+    position: absolute; top: -18px; inset-inline-start: 20px;
+    font-family: var(--display); font-size: 15px;
+    background: var(--orange); border: 3px solid var(--ink); border-radius: 12px;
+    padding: 2px 12px; transform: rotate(3deg);
+    font-variant-numeric: tabular-nums;
+  }
+  .q { font-family: var(--display); font-size: clamp(22px, 5.6vw, 29px); line-height: 1.25; margin: 6px 0 0; text-wrap: balance; }
+  .sub { margin: 0; color: var(--muted); font-size: 15px; }
+  .answers { display: grid; gap: 12px; position: relative; }
+  .ans {
+    font: inherit; font-size: 17px; color: var(--ink);
+    text-align: start;
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    border-radius: 16px;
+    padding: 13px 16px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: transform .15s, box-shadow .15s, background .15s;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .ans .key {
+    flex: none; width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: var(--display); font-size: 15px;
+    border: 2px solid var(--ink);
+  }
+  .ans:nth-child(4n+1) .key { background: var(--pink); }
+  .ans:nth-child(4n+2) .key { background: var(--mint); }
+  .ans:nth-child(4n+3) .key { background: var(--sky); }
+  .ans:nth-child(4n+4) .key { background: var(--lilac); }
+  .ans:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); background: #FFFBEA; }
+  .ans:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--ink); }
+  .ans:focus-visible, .chip:focus-visible, .btn:focus-visible, textarea:focus-visible { outline: 3px dashed var(--pink); outline-offset: 3px; }
+  .ans.sly { transition: transform .25s cubic-bezier(.3,1.8,.5,1); }
+
+  .bubble {
+    justify-self: start;
+    background: var(--ink); color: var(--sun);
+    border-radius: 18px 18px 18px 4px;
+    padding: 10px 16px; font-size: 16px;
+    max-width: 100%;
+    animation: pop .35s cubic-bezier(.3,1.8,.5,1);
+  }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .swap-in { animation: swapIn .45s cubic-bezier(.3,1.4,.5,1); }
+  @keyframes swapIn { from { transform: translateY(18px) rotate(-1.5deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  .shake { animation: shake .4s; }
+  @keyframes shake { 25% { transform: translateX(-8px) rotate(-1deg); } 50% { transform: translateX(8px) rotate(1deg); } 75% { transform: translateX(-4px); } }
+
+  .label { font-family: var(--display); font-size: 15px; letter-spacing: .03em; margin: 4px 0 -4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font: inherit; font-size: 15px; color: var(--ink);
+    background: var(--paper); border: 2px solid var(--ink); border-radius: 12px;
+    padding: 7px 11px; cursor: pointer; line-height: 1.25;
+    display: grid; justify-items: center; min-width: 64px;
+    font-variant-numeric: tabular-nums;
+  }
+  .chip small { font-size: 12px; color: var(--muted); }
+  .chip[aria-pressed="true"] { background: var(--mint); box-shadow: 3px 3px 0 var(--ink); transform: translate(-1px,-1px); }
+  .chip[aria-pressed="true"] small { color: var(--ink); }
+
+  .btn {
+    font-family: var(--display); font-size: 19px; color: var(--ink);
+    background: var(--pink); border: 3px solid var(--ink); border-radius: 16px;
+    padding: 12px 20px; cursor: pointer; box-shadow: 5px 5px 0 var(--ink);
+    text-decoration: none; text-align: center; display: inline-block;
+  }
+  .btn:disabled { background: #EDE7F7; color: var(--muted); cursor: not-allowed; box-shadow: 3px 3px 0 var(--muted); border-color: var(--muted); }
+  .btn.alt { background: var(--sky); }
+  .btn.ghost { background: var(--paper); font-size: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .link { background: none; border: 0; padding: 0; font: inherit; font-size: 14px; color: var(--muted); text-decoration: underline wavy var(--pink); cursor: pointer; justify-self: start; }
+
+  textarea {
+    width: 100%; min-height: 72px; resize: vertical;
+    font: inherit; font-size: 16px; color: var(--ink);
+    border: 2.5px solid var(--ink); border-radius: 14px; padding: 10px 12px; background: #FFFCF0;
+  }
+  .ticket {
+    border: 3px dashed var(--ink); border-radius: 18px; padding: 16px;
+    background: #FFF8DC; display: grid; gap: 4px;
+  }
+  .ticket .big { font-family: var(--display); font-size: 24px; line-height: 1.2; }
+  .fine { font-size: 12.5px; color: var(--muted); margin: 0; }
+  .msg { background: #F4F0FF; border-radius: 14px; padding: 12px 14px; font-size: 15px; white-space: pre-wrap; user-select: all; }
+
+  footer { text-align: center; font-size: 12.5px; color: var(--muted); }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<main class="wrap">
+  <header>
+    <span class="stamp">מחקר מדעי ורציני לגמרי</span>
+    <h1>השאלון <span class="hl">הקצר</span> בעולם</h1>
+  </header>
+
+  <div class="progress" aria-hidden="true">
+    <div class="progress-top"><span id="progLabel">התקדמות</span><span id="progPct">0%</span></div>
+    <div class="bar"><i id="progBar"></i></div>
+  </div>
+
+  <section class="card" id="card" aria-live="polite"></section>
+
+  <footer>אין תשובות לא נכונות. יש רק תשובות שמובילות לאותו מקום.</footer>
+</main>
+
+<script>
+/* ===== הגדרות: לשנות כאן ===== */
+const CONFIG = {
+  // מספר הוואטסאפ שלך בפורמט בינלאומי, בלי + ובלי מקפים. למשל 972501234567
+  phone: "",
+  // איך לחתום בסוף (אפשר להשאיר ריק)
+  from: "",
+};
+/* ============================== */
+
+const card = document.getElementById("card");
+const state = { activity: "קפה", day: null, time: null, note: "" };
+
+// Progress bar that lies with a straight face
+const fakeProgress = [7, 19, 33, 12, 58, 71, 64, 88, 97, 99, 100];
+const progLabels = ["התקדמות", "התקדמות", "התקדמות", "אופס, קצת אחורה", "התקדמות", "כמעט", "עוד רגע", "כמעט באמת", "כמעט-כמעט", "99.9%", "הושלם!"];
+let stepIndex = 0;
+function setProgress(i) {
+  const p = fakeProgress[Math.min(i, fakeProgress.length - 1)];
+  document.getElementById("progBar").style.width = p + "%";
+  document.getElementById("progPct").textContent = p + "%";
+  document.getElementById("progLabel").textContent = progLabels[Math.min(i, progLabels.length - 1)];
+}
+
+/* Every answer leads forward. `sly: n` makes the button dodge n times before it lets itself be clicked. */
+const questions = [
+  {
+    q: "היי את. יש לך 60 שניות לשאלון קצרצר?",
+    sub: "מבטיח שאין פה מבחן פתע.",
+    answers: [
+      { t: "יאללה, קדימה", r: "איזה כיף! ידעתי שאפשר לסמוך עלייך." },
+      { t: "אין לי זמן", r: "מושלם, השאלון הזה נבנה במיוחד לאנשים בלי זמן." },
+      { t: "ממש לא", r: "רשמתי 'ממש לא' בתור 'ממש כן'. ממשיכים!", sly: 2 },
+    ],
+  },
+  {
+    q: "מה דעתך על שיחה אמיתית, רק שנינו?",
+    sub: "זמן פרטי משלנו: בלי רעש, בלי מסכים, בלי לחץ.",
+    answers: [
+      { t: "נשמע רעיון טוב", r: "גם לי! איזה סנכרון." },
+      { t: "אולי", r: "'אולי' זה בערך 'כן' שעוד לא שתה קפה." },
+      { t: "לא נראה לי", r: "המערכת זיהתה 'לא נראה לי' ותרגמה ל'בואו ננסה'.", sly: 3 },
+    ],
+  },
+  {
+    q: "איך הכי נוח לך לדבר?",
+    sub: "בחרי מה שמרגיש הכי קליל.",
+    answers: [
+      { t: "על קפה", r: "קפה זה תמיד רעיון טוב.", set: "קפה" },
+      { t: "בהליכה", r: "הליכה ושיחה. שני דברים בריאים במכה אחת.", set: "הליכה" },
+      { t: "על ארוחה טובה", r: "בחירה מעולה. אני מזמין.", set: "ארוחה" },
+      { t: "בשום צורה", r: "'שום צורה' לא במלאי כרגע. שמתי לך קפה.", set: "קפה", sly: 2 },
+    ],
+  },
+  {
+    q: "שאלת ביטחון: האם את מתנגדת לא להסכים?",
+    sub: "תקראי שוב לאט. אני מחכה.",
+    answers: [
+      { t: "כן", r: "כלומר מסכימה. מעולה!" },
+      { t: "לא", r: "כלומר לא מתנגדת. מעולה!" },
+      { t: "רגע, מה?", r: "בדיוק. אז זה כן." },
+    ],
+  },
+  {
+    q: "כמה זמן להקדיש לשיחה?",
+    sub: "אין פה אותיות קטנות. טוב, יש קצת.",
+    answers: [
+      { t: "חצי שעה", r: "חצי שעה, מדויק ויעיל." },
+      { t: "שעה", r: "שעה. בדיוק מה שהמחשבון המליץ." },
+      { t: "כמה שצריך", r: "תשובה של אלופה." },
+      { t: "אפס דקות", r: "אפס דקות עוגל כלפי מעלה לשעה. זה החוק.", sly: 2 },
+    ],
+  },
+  {
+    q: "האם את מוכנה לסגור תאריך עכשיו?",
+    sub: "או עכשיו, או... עכשיו.",
+    answers: [
+      { t: "כן", r: "יש! עוברים ללוח השנה." },
+      { t: "בוא נדבר על זה אחר כך", r: "זה בדיוק מה שנעשה: נדבר על זה. בתאריך שנקבע עכשיו." },
+      { t: "לא", r: "חזרה לשאלה הראשונה? לא, סתם. ממשיכים ללוח השנה.", sly: 3 },
+    ],
+  },
+];
+
+const heDays = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+const heMonths = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+const times = ["09:00", "11:00", "13:00", "17:00", "19:00", "20:30"];
+
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") n.className = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v);
+  }
+  for (const c of kids) if (c != null) n.append(c);
+  return n;
+}
+
+function swap(nodes) {
+  card.replaceChildren(...nodes);
+  card.classList.remove("swap-in");
+  void card.offsetWidth;
+  card.classList.add("swap-in");
+  const first = card.querySelector("button");
+  if (first) first.focus({ preventScroll: true });
+}
+
+function dodge(btn) {
+  const box = btn.parentElement.getBoundingClientRect();
+  const b = btn.getBoundingClientRect();
+  const maxX = Math.max(40, (box.width - b.width) / 2);
+  const x = (Math.random() * 2 - 1) * maxX;
+  const y = (Math.random() * 2 - 1) * 40;
+  btn.style.transform = `translate(${x}px, ${y}px) rotate(${(Math.random() * 16 - 8).toFixed(1)}deg)`;
+}
+
+const dodgeTaunts = ["אופס, הכפתור הזה ביישן", "כמעט!", "הוא בורח, לא אני", "טוב, טוב, תלחצי"];
+
+function renderQuestion(i) {
+  const item = questions[i];
+  setProgress(stepIndex++);
+  const answers = el("div", { class: "answers" });
+  const bubbleSlot = el("div");
+  const letters = ["א", "ב", "ג", "ד"];
+  let locked = false;
+
+  item.answers.forEach((a, idx) => {
+    let dodgesLeft = a.sly || 0;
+    const btn = el("button", { class: "ans" + (a.sly ? " sly" : ""), type: "button", id: `q${i}a${idx}` },
+      el("span", { class: "key" }, letters[idx]), el("span", {}, a.t));
+    const tryDodge = (e) => {
+      if (dodgesLeft > 0) {
+        e.preventDefault();
+        dodgesLeft--;
+        dodge(btn);
+        bubbleSlot.replaceChildren(el("div", { class: "bubble" }, dodgeTaunts[Math.min(a.sly - dodgesLeft - 1, dodgeTaunts.length - 1)]));
+        return true;
+      }
+      return false;
+    };
+    if (a.sly) {
+      btn.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") tryDodge(e); });
+      btn.addEventListener("touchstart", (e) => { if (tryDodge(e)) e.stopPropagation(); }, { passive: false });
+    }
+    btn.addEventListener("click", (e) => {
+      if (locked) return;
+      if (a.sly && tryDodge(e)) return;
+      locked = true;
+      if (a.set) state.activity = a.set;
+      btn.style.background = "#FFFBEA";
+      bubbleSlot.replaceChildren(el("div", { class: "bubble" }, a.r));
+      setTimeout(() => (i + 1 < questions.length ? renderQuestion(i + 1) : renderSchedule()), 1700);
+    });
+    answers.append(btn);
+  });
+
+  swap([
+    el("span", { class: "qnum" }, `שאלה ${i + 1}`),
+    el("h2", { class: "q" }, item.q),
+    el("p", { class: "sub" }, item.sub),
+    answers,
+    bubbleSlot,
+  ]);
+}
+
+function upcomingDays(n) {
+  const out = [];
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  for (let k = 1; k <= n; k++) {
+    const x = new Date(d);
+    x.setDate(d.getDate() + k);
+    out.push(x);
+  }
+  return out;
+}
+const dayName = (d) => `יום ${heDays[d.getDay()]}`;
+const dayFull = (d) => `${dayName(d)}, ${d.getDate()} ב${heMonths[d.getMonth()]}`;
+
+function renderSchedule() {
+  setProgress(stepIndex++);
+  const days = upcomingDays(12);
+  const confirm = el("button", { class: "btn", type: "button", id: "confirmBtn", disabled: "" }, "סגרנו!");
+  const bubbleSlot = el("div");
+
+  const refresh = () => {
+    dayChips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.i === String(state.dayIdx))));
+    timeChips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.t === state.time)));
+    confirm.disabled = !(state.day && state.time);
+  };
+
+  const dayChips = el("div", { class: "chips", role: "group", "aria-label": "יום" });
+  days.forEach((d, idx) => {
+    dayChips.append(el("button", {
+      class: "chip", type: "button", "data-i": String(idx), "aria-pressed": "false", id: `day${idx}`,
+      onclick: () => { state.day = d; state.dayIdx = idx; refresh(); },
+    }, heDays[d.getDay()], el("small", {}, `${d.getDate()}.${d.getMonth() + 1}`)));
+  });
+
+  const timeChips = el("div", { class: "chips", role: "group", "aria-label": "שעה" });
+  times.forEach((t) => {
+    timeChips.append(el("button", {
+      class: "chip", type: "button", "data-t": t, "aria-pressed": "false", id: `time${t.replace(":", "")}`,
+      onclick: () => { state.time = t; refresh(); },
+    }, t));
+  });
+
+  const pickForMe = el("button", { class: "btn ghost", type: "button", id: "pickForMe", onclick: () => {
+    const idx = Math.floor(Math.random() * 5) + 1;
+    state.day = days[idx]; state.dayIdx = idx; state.time = times[4];
+    refresh();
+    bubbleSlot.replaceChildren(el("div", { class: "bubble" }, `בחרתי בשבילך: ${dayFull(state.day)} ב-${state.time}. אפשר לשנות.`));
+  } }, "תבחר אתה");
+
+  const never = el("button", { class: "link", type: "button", id: "never", onclick: () => {
+    state.day = days[0]; state.dayIdx = 0; state.time = times[3];
+    refresh();
+    card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
+    bubbleSlot.replaceChildren(el("div", { class: "bubble" }, "'אף פעם' לא נמצא בלוח. התאריך הכי קרוב אליו: מחר."));
+  } }, "אני לא פנויה אף פעם");
+
+  confirm.addEventListener("click", renderDone);
+
+  swap([
+    el("span", { class: "qnum" }, "השאלה האחרונה"),
+    el("h2", { class: "q" }, "מתי נוח לך?"),
+    el("p", { class: "sub" }, `בחרי יום ושעה ל${state.activity === "ארוחה" ? "ארוחה" : state.activity === "הליכה" ? "הליכה" : "קפה"} שלנו.`),
+    el("p", { class: "label" }, "יום"),
+    dayChips,
+    el("p", { class: "label" }, "שעה"),
+    timeChips,
+    bubbleSlot,
+    el("div", { class: "row" }, confirm, pickForMe),
+    never,
+  ]);
+  refresh();
+}
+
+function buildMessage() {
+  const lines = [
+    "היי! מילאתי את השאלון 😄",
+    `סגרנו על ${state.activity === "ארוחה" ? "ארוחה" : state.activity === "הליכה" ? "הליכה" : "קפה"}: ${dayFull(state.day)} בשעה ${state.time}.`,
+  ];
+  if (state.note.trim()) lines.push(`ועוד משהו: ${state.note.trim()}`);
+  return lines.join("\n");
+}
+
+function renderDone() {
+  setProgress(fakeProgress.length - 1);
+  confettiBurst();
+  const msgBox = el("div", { class: "msg", id: "msgBox" }, buildMessage());
+  const note = el("textarea", { id: "note", placeholder: "משהו שתרצי להוסיף? (לא חובה)" });
+  note.addEventListener("input", () => { state.note = note.value; msgBox.textContent = buildMessage(); updateWa(); });
+
+  const wa = el("a", { class: "btn alt", id: "waBtn", target: "_blank", rel: "noopener" }, "שליחה בוואטסאפ");
+  const updateWa = () => {
+    const text = encodeURIComponent(buildMessage());
+    wa.href = CONFIG.phone ? `https://wa.me/${CONFIG.phone}?text=${text}` : `https://wa.me/?text=${text}`;
+  };
+  updateWa();
+
+  const copyStatus = el("span", { class: "fine", role: "status" });
+  const copy = el("button", { class: "btn ghost", type: "button", id: "copyBtn", onclick: async () => {
+    try {
+      await navigator.clipboard.writeText(buildMessage());
+      copyStatus.textContent = "הועתק. אפשר להדביק בהודעה.";
+    } catch {
+      const r = document.createRange(); r.selectNodeContents(msgBox);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      copyStatus.textContent = "סימנתי את הטקסט, העתיקי ידנית.";
+    }
+  } }, "העתקת ההודעה");
+
+  swap([
+    el("span", { class: "qnum" }, "סיום"),
+    el("h2", { class: "q" }, "יש! נקבע 🎉"),
+    el("div", { class: "ticket" },
+      el("span", { class: "fine" }, "כרטיס כניסה לשיחה אחת, זוגי"),
+      el("span", { class: "big" }, `${dayFull(state.day)}`),
+      el("span", {}, `בשעה ${state.time} · ${state.activity}`)),
+    el("p", { class: "sub" }, "נשאר רק לשלוח לי את התשובה:"),
+    note,
+    msgBox,
+    el("div", { class: "row" }, wa, copy),
+    copyStatus,
+    el("p", { class: "fine" }, CONFIG.from ? `מחכה לזה. ${CONFIG.from}` : "מחכה לזה."),
+  ]);
+}
+
+/* Confetti */
+const cv = document.getElementById("confetti");
+const cx = cv.getContext("2d");
+function confettiBurst() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const W = (cv.width = innerWidth), H = (cv.height = innerHeight);
+  const colors = ["#FF5FA2", "#2CCFB6", "#5DB7FF", "#FF9F43", "#B79CFF", "#FFD23F"];
+  const parts = Array.from({ length: 160 }, () => ({
+    x: W / 2, y: H / 3, vx: (Math.random() - .5) * 14, vy: Math.random() * -13 - 3,
+    s: Math.random() * 7 + 5, r: Math.random() * 6, vr: (Math.random() - .5) * .3,
+    c: colors[Math.floor(Math.random() * colors.length)],
+  }));
+  let frames = 0;
+  (function tick() {
+    cx.clearRect(0, 0, W, H);
+    parts.forEach((p) => {
+      p.vy += .32; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r);
+      cx.fillStyle = p.c; cx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); cx.restore();
+    });
+    if (++frames < 220) requestAnimationFrame(tick); else cx.clearRect(0, 0, W, H);
+  })();
+}
+
+renderQuestion(0);
+</script>
+</body>
+</html>
