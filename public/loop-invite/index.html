@@ -211,7 +211,18 @@ const CONFIG = {
   phone: "972524552697",
   // איך לחתום בסוף (אפשר להשאיר ריק)
   from: "",
+  // כתובת ה-Web App של Google Apps Script (מסתיימת ב-/exec). כל תשובה נרשמת בגיליון.
+  sheetUrl: "",
 };
+
+const visitId = Math.random().toString(36).slice(2, 8).toUpperCase();
+function logToSheet(row) {
+  if (!CONFIG.sheetUrl) return;
+  const body = JSON.stringify({ visit: visitId, device: navigator.userAgent.slice(0, 120), ...row });
+  try {
+    fetch(CONFIG.sheetUrl, { method: "POST", mode: "no-cors", keepalive: true, headers: { "Content-Type": "text/plain;charset=utf-8" }, body }).catch(() => {});
+  } catch {}
+}
 /* ============================== */
 
 const card = document.getElementById("card");
@@ -354,6 +365,7 @@ function renderQuestion(i) {
       if (a.sly && tryDodge(e)) return;
       locked = true;
       if (a.set) state.activity = a.set;
+      logToSheet({ step: `שאלה ${i + 1}`, question: item.q, answer: a.t, activity: state.activity });
       btn.style.background = "#FFFBEA";
       bubbleSlot.replaceChildren(el("div", { class: "bubble" }, a.r));
       setTimeout(() => (i + 1 < questions.length ? renderQuestion(i + 1) : renderSchedule()), 1700);
@@ -387,6 +399,7 @@ const dayFull = (d) => `${dayName(d)}, ${d.getDate()} ב${heMonths[d.getMonth()]
 function renderSchedule() {
   setProgress(stepIndex++);
   const days = upcomingDays(12);
+  const dodgeLog = (label) => logToSheet({ step: "לוח זמנים", question: "מתי נוח לך?", answer: label });
   const confirm = el("button", { class: "btn", type: "button", id: "confirmBtn", disabled: "" }, "סגרנו!");
   const bubbleSlot = el("div");
 
@@ -413,6 +426,7 @@ function renderSchedule() {
   });
 
   const pickForMe = el("button", { class: "btn ghost", type: "button", id: "pickForMe", onclick: () => {
+    dodgeLog("תבחר אתה");
     const idx = Math.floor(Math.random() * 5) + 1;
     state.day = days[idx]; state.dayIdx = idx; state.time = times[4];
     refresh();
@@ -420,6 +434,7 @@ function renderSchedule() {
   } }, "תבחר אתה");
 
   const never = el("button", { class: "link", type: "button", id: "never", onclick: () => {
+    dodgeLog("אני לא פנויה אף פעם");
     state.day = days[0]; state.dayIdx = 0; state.time = times[3];
     refresh();
     card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
@@ -455,11 +470,14 @@ function buildMessage() {
 function renderDone() {
   setProgress(fakeProgress.length - 1);
   confettiBurst();
+  const booking = () => ({ activity: state.activity, day: dayFull(state.day), time: state.time, note: state.note.trim() });
+  logToSheet({ step: "נקבע", question: "סגרנו!", answer: "אישרה תאריך", ...booking() });
   const msgBox = el("div", { class: "msg", id: "msgBox" }, buildMessage());
   const note = el("textarea", { id: "note", placeholder: "משהו שתרצי להוסיף? (לא חובה)" });
   note.addEventListener("input", () => { state.note = note.value; msgBox.textContent = buildMessage(); updateWa(); });
 
-  const wa = el("a", { class: "btn alt", id: "waBtn", target: "_blank", rel: "noopener" }, "שליחה בוואטסאפ");
+  const wa = el("a", { class: "btn alt", id: "waBtn", target: "_blank", rel: "noopener",
+    onclick: () => logToSheet({ step: "שליחה", question: "וואטסאפ", answer: "לחצה על שליחה בוואטסאפ", ...booking() }) }, "שליחה בוואטסאפ");
   const updateWa = () => {
     const text = encodeURIComponent(buildMessage());
     wa.href = CONFIG.phone ? `https://wa.me/${CONFIG.phone}?text=${text}` : `https://wa.me/?text=${text}`;
@@ -476,6 +494,7 @@ function renderDone() {
       const s = getSelection(); s.removeAllRanges(); s.addRange(r);
       copyStatus.textContent = "סימנתי את הטקסט, העתיקי ידנית.";
     }
+    logToSheet({ step: "שליחה", question: "העתקה", answer: "העתיקה את ההודעה", ...booking() });
   } }, "העתקת ההודעה");
 
   swap([
@@ -518,6 +537,7 @@ function confettiBurst() {
   })();
 }
 
+logToSheet({ step: "כניסה", answer: "פתחה את העמוד" });
 renderQuestion(0);
 </script>
 </body>
